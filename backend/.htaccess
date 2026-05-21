@@ -1,0 +1,23 @@
+# SK Parfumerie — Apache configuration
+
+# Block direct access to config files
+<FilesMatch "\.(php)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+<FilesMatch "^(database|helpers)\.php$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options SAMEORIGIN
+Header always set Referrer-Policy strict-origin-when-cross-origin
+
+# Prevent access to uploads directory PHP execution
+<Directory uploads>
+    php_flag engine off
+    Options -Indexes
+    AddHandler default-handler .php .phtml
+</Directory>
