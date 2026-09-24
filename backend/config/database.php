@@ -1,15 +1,15 @@
 <?php
 // =====================================================
-// SK PARFUMERIE — Configuration Base de Données
+// ProTech Touch — Configuration Base de Données
 // =====================================================
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'sk_parfumerie');
-define('DB_USER', 'root');          // Changer en production
-define('DB_PASS', '');              // Changer en production
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'protech_touch_db');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
-define('JWT_SECRET', 'sk_parfumerie_secret_2024_change_me');
+define('JWT_SECRET', getenv('JWT_SECRET') ?: 'change-me-in-production');
 define('JWT_EXPIRY', 3600 * 8);    // 8 heures
 
 function getDB(): PDO {
@@ -25,8 +25,9 @@ function getDB(): PDO {
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     } catch (PDOException $e) {
+        error_log('Erreur connexion DB: ' . $e->getMessage());
         http_response_code(500);
-        die(json_encode(['success' => false, 'message' => 'Erreur connexion DB: ' . $e->getMessage()]));
+        die(json_encode(['success' => false, 'message' => 'Erreur connexion DB']));
     }
     return $pdo;
 }

@@ -18,12 +18,12 @@ export interface LocalSale {
   synced: 0 | 1
 }
 
-class SKParfumerieDB extends Dexie {
+class ProTechTouchDB extends Dexie {
   pendingOps!: Table<PendingOperation>
   localSales!: Table<LocalSale>
 
   constructor() {
-    super('SKParfumerieDB')
+    super('ProTechTouchDB')
     this.version(1).stores({
       pendingOps: '++id, type, action, timestamp, synced',
       localSales: 'id, date, synced'
@@ -43,4 +43,4 @@ class SKParfumerieDB extends Dexie {
   }
 }
 
-export const db = new SKParfumerieDB()
+export const db = new ProTechTouchDB()

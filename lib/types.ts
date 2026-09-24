@@ -1,5 +1,5 @@
 // =====================================================
-// TYPES CENTRAUX — SK PARFUMERIE & COSMÉTIQUES
+// TYPES CENTRAUX — ProTech Touch
 // =====================================================
 
 export type UserRole = 'admin' | 'manager' | 'caisse'
@@ -12,12 +12,24 @@ export interface User {
   caisse_number?: number
   status?: 'actif' | 'inactif'
   last_login?: string
+  online?: boolean
+  last_seen?: string
+  machine_id?: string
+  // Impression settings
+  printing?: {
+    pagesNumber?: number
+    unitPrice?: number
+    totalPrice?: number
+    printType?: 'A4' | 'A3' | 'bache' | 'tshirt' | 'vinyl' | 'other'
+  }
+  machine_label?: string
 }
 
 export interface Product {
   id: number
   name: string
   price: number
+  status?: 'pending' | 'executed'
   stock: number
   alert_threshold: number
   category: string
@@ -42,17 +54,63 @@ export interface InvoiceArticle {
 }
 
 export interface Invoice {
+  _id?: string
   id: number
   numero: string
   date: string
   type: 'ticket' | 'facture'
+  paperSize?: '80' | '58' | 'A4'
   client: string
+  clientPhone?: string
   caissier: string
   articles: InvoiceArticle[]
   sousTotal: number
   remise: number
   montantRemise: number
+  tvaRate?: number
+  montantTva?: number
   total: number
+  status?: 'pending' | 'executed'
+}
+
+export interface ClientMachine {
+  id: number
+  name: string
+  type: string
+  description: string
+  price: string
+  image?: string
+}
+
+export interface ClientOrder {
+  id: string
+  customerName: string
+  phone: string
+  email: string
+  serviceType: 'impression' | 'maintenance' | 'devis' | 'autre'
+  productName: string
+  machineName: string
+  shirtBrand: string
+  shirtColor: string
+  quantity: number
+  notes: string
+  image?: string
+  status: 'pending' | 'executed'
+  createdAt: string
+}
+
+export interface ClientServiceRequest {
+  id: string
+  type: 'impression' | 'maintenance'
+  name: string
+  phone: string
+  email: string
+  printType?: string
+  machineType?: string
+  availabilityDate?: string
+  message: string
+  status: 'pending' | 'executed'
+  createdAt: string
 }
 
 export interface AppSettings {
@@ -61,9 +119,16 @@ export interface AppSettings {
   idNat: string
   phone: string
   usdRate: number
+  taxRate: number
   defaultCurrency: 'CDF' | 'USD'
   backupInterval: number
   companyLogo?: string
+  printing?: {
+    pagesNumber?: number
+    unitPrice?: number
+    totalPrice?: number
+    printType?: 'A4' | 'A3' | 'bache' | 'tshirt' | 'vinyl' | 'other'
+  }
 }
 
 export interface DashboardData {
@@ -104,6 +169,22 @@ export interface ActivityLog {
   createdAt: string
 }
 
+export interface UserPresence {
+  _id?: string
+  userId: number | string
+  name: string
+  email: string
+  role: UserRole
+  machineId: string
+  machineName: string
+  userAgent?: string | null
+  ip?: string | null
+  status: 'online' | 'offline'
+  lastSeenAt: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export type Language = 'fr' | 'en' | 'de'
 
 export type ContentPage =
@@ -116,3 +197,4 @@ export type ContentPage =
   | 'activity'
   | 'printers'
   | 'settings'
+  | 'reports'

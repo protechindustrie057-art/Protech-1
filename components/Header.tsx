@@ -1,6 +1,6 @@
 'use client'
 
-import { Sun, Moon, Download, Globe, DollarSign } from 'lucide-react'
+import { Sun, Moon, Download, Globe, DollarSign, RefreshCw } from 'lucide-react'
 import type { Currency, Language } from '@/lib/types'
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   currency: Currency
   onCurrencyChange: (c: Currency) => void
   onExport: () => void
+  onRefresh: () => void
+  isRefreshing: boolean
   companyName: string
   companyLogo?: string
 }
@@ -23,6 +25,8 @@ export default function Header({
   currency,
   onCurrencyChange,
   onExport,
+  onRefresh,
+  isRefreshing,
   companyName,
   companyLogo,
 }: Props) {
@@ -38,14 +42,13 @@ export default function Header({
       {/* Brand */}
       <div className="flex items-center gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))' }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 border"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(59,130,246,0.18))',
+            borderColor: 'rgba(255,215,0,0.3)',
+          }}
         >
-          {companyLogo ? (
-            <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-base font-bold text-gray-900" aria-hidden>S</span>
-          )}
+          <img src={companyLogo || '/logo.png'} alt="Logo ProTech Touch" className="w-full h-full object-cover" />
         </div>
         <span className="font-serif font-bold text-base text-white hidden sm:block truncate max-w-[180px]">
           {companyName}
@@ -53,7 +56,7 @@ export default function Header({
       </div>
 
       {/* Center */}
-      <h1 className="font-serif font-semibold text-sm hidden md:block" style={{ color: '#ffd700', letterSpacing: '0.08em' }}>
+      <h1 className="font-serif font-semibold text-sm hidden md:block" style={{ color: '#38bdf8', letterSpacing: '0.08em' }}>
         GESTION PROFESSIONNELLE
       </h1>
 
@@ -101,15 +104,37 @@ export default function Header({
           <Download size={16} aria-hidden />
         </button>
 
+        {/* Refresh data */}
+        <button
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-white/10 disabled:opacity-50"
+          title="Actualiser les donnees"
+          aria-label="Actualiser les donnees"
+          style={{ color: 'hsl(var(--foreground) / 0.7)' }}
+        >
+          <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} aria-hidden />
+        </button>
+
         {/* Theme toggle */}
         <button
           onClick={onToggleTheme}
-          className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
+          className="group relative inline-flex h-8 w-16 items-center rounded-full border border-sky-200 bg-slate-100 p-1 shadow-inner transition-all duration-300 hover:border-sky-300 dark:border-sky-800 dark:bg-[#0f172a]"
           title={darkMode ? 'Mode clair' : 'Mode sombre'}
           aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
-          style={{ background: 'linear-gradient(135deg,#ffffff 50%,#000000 50%)', color: '#ffd700' }}
         >
-          {darkMode ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
+          <span className="absolute inset-x-0 flex items-center justify-between px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            <span className={darkMode ? 'text-slate-400' : 'text-sky-600'}>Light</span>
+            <span className={darkMode ? 'text-sky-300' : 'text-slate-400'}>Dark</span>
+          </span>
+
+          <span
+            className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full shadow-lg transition-transform duration-300 ${
+              darkMode ? 'translate-x-8 bg-slate-900 text-sky-300' : 'translate-x-0 bg-white text-amber-500'
+            }`}
+          >
+            {darkMode ? <Moon size={12} aria-hidden /> : <Sun size={12} aria-hidden />}
+          </span>
         </button>
       </div>
     </header>

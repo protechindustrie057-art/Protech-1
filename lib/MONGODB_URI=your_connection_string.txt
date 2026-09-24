@@ -1,4 +1,4 @@
 MONGODB_URI=your_connection_string
-MONGODB_DB=sk_parfumerie
+MONGODB_DB=protech_touch_db
 NEXT_PUBLIC_API_BASE_URL=/api
 MONGODB_ALLOW_INVALID_CERTS=true

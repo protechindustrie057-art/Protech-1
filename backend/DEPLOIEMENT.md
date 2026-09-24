@@ -1,4 +1,4 @@
-# SK Parfumerie — Guide de Déploiement Backend PHP
+# ProTech Touch — Guide de Déploiement Backend PHP
 
 ## Structure des fichiers
 
@@ -41,7 +41,7 @@ mysql -u root -p < backend/database/schema.sql
 Modifier `backend/config/database.php` :
 ```php
 define('DB_HOST', 'votre-host');
-define('DB_NAME', 'sk_parfumerie');
+define('DB_NAME', 'protech_touch_db');
 define('DB_USER', 'votre-user');
 define('DB_PASS', 'votre-password');
 define('JWT_SECRET', 'changez-cette-cle-secrete-longue-et-aleatoire');
@@ -92,8 +92,5 @@ Authorization: Bearer <JWT_TOKEN>
 Le token est retourné par `POST /auth.php` et expire après 8 heures.
 
 ## Compte admin par défaut
-
-- Email : `admin@skparfumerie.cd`
-- Mot de passe : `admin123`
 
 **Changer immédiatement ce mot de passe après le premier déploiement.**

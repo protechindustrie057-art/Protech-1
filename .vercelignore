@@ -1,0 +1,24 @@
+# Local dependencies and build outputs
+node_modules/
+.next/
+out/
+build/
+
+# Local environment files
+.env
+.env.local
+.env*.local
+
+# Desktop installer / packaging artifacts
+release/
+ProTech_Touch_Setup.exe
+ProTech_Touch.iss
+run-app.bat
+server.js
+
+# Local MongoDB files
+mongo-data/
+mongo-log/
+
+# Vercel local metadata
+.vercel/

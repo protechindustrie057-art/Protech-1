@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { Product, CartItem, Currency } from '@/lib/types'
 import { formatPrice } from '@/lib/store'
 
 const CATEGORY_PLACEHOLDERS: Record<string, string> = {
-  parfums: 'https://placehold.co/60x60?text=Parfum',
-  laits: 'https://placehold.co/60x60?text=Lait',
-  rouges: 'https://placehold.co/60x60?text=Rouge',
-  maquillage: 'https://placehold.co/60x60?text=Makeup',
-  soins: 'https://placehold.co/60x60?text=Soin',
-  cheveux: 'https://placehold.co/60x60?text=Cheveux',
+  cartouches: 'https://placehold.co/60x60?text=Cartouche',
+  papier: 'https://placehold.co/60x60?text=Papier',
+  stockage: 'https://placehold.co/60x60?text=Stockage',
+  cables: 'https://placehold.co/60x60?text=Cable',
+  accessoires: 'https://placehold.co/60x60?text=Accessoire',
+  impression: 'https://placehold.co/60x60?text=Impression',
   divers: 'https://placehold.co/60x60?text=Produit',
 }
 
@@ -40,7 +40,7 @@ interface Props {
   usdRate: number
 }
 
-const CATEGORIES = ['Tous', 'Parfums', 'Laits & Crèmes', 'Rouges à Lèvres', 'Maquillage', 'Soins', 'Cheveux', 'Divers']
+const CATEGORIES = ['Tous', 'Cartouches & encres', 'Papier & supports', 'Stockage & mémoire', 'Câbles & accessoires', 'Accessoires', 'Impression & maintenance', 'Divers']
 
 export default function CaissePage({
   products,
@@ -56,6 +56,11 @@ export default function CaissePage({
   const [activeCategory, setActiveCategory] = useState('Tous')
   const [barcode, setBarcode] = useState('')
   const [search, setSearch] = useState('')
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanMessage, setScanMessage] = useState('')
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const detectorRef = useRef<any>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const fmt = (n: number) => formatPrice(n, currency, usdRate)
 
   const filtered = products.filter((p) => {
@@ -67,16 +72,92 @@ export default function CaissePage({
   const cartTotal = cart.reduce((s, i) => s + i.total, 0)
   const cartQty = cart.reduce((s, i) => s + i.quantity, 0)
 
-  const handleScan = useCallback(() => {
-    if (!barcode.trim()) return
+  const addProductByCode = useCallback((code: string) => {
+    const value = code.trim()
+    if (!value) return false
+
     const prod = products.find(
-      (p) => p.barcode === barcode.trim() || p.id.toString() === barcode.trim()
+      (p) => p.barcode === value || p.id.toString() === value
     )
+
     if (prod) {
       onAddToCart(prod.id)
       setBarcode('')
+      setScanMessage(`${prod.name} ajoute au panier`)
+      return true
     }
-  }, [barcode, products, onAddToCart])
+
+    setScanMessage(`Aucun produit trouve pour le code ${value}`)
+    return false
+  }, [products, onAddToCart])
+
+  const handleScan = useCallback(() => {
+    addProductByCode(barcode)
+  }, [barcode, addProductByCode])
+
+  function stopCameraScanner() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.pause()
+      videoRef.current.srcObject = null
+    }
+    setIsScanning(false)
+  }
+
+  async function startCameraScanner() {
+    if (typeof window === 'undefined') return
+    if (!('BarcodeDetector' in window)) {
+      setScanMessage('Scanner camera non supporte par ce navigateur. Utilisez le champ code-barres ou une douchette USB.')
+      return
+    }
+
+    try {
+      detectorRef.current = new (window as any).BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'],
+      })
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      streamRef.current = stream
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+      }
+
+      setScanMessage('Camera active. Placez le code-barres devant la camera.')
+      setIsScanning(true)
+    } catch (error) {
+      console.error(error)
+      setScanMessage("Impossible d'utiliser la camera pour scanner.")
+      stopCameraScanner()
+    }
+  }
+
+  useEffect(() => {
+    if (!isScanning) return
+
+    const interval = window.setInterval(async () => {
+      if (!detectorRef.current || !videoRef.current) return
+      try {
+        const barcodes = await detectorRef.current.detect(videoRef.current)
+        const code = barcodes?.[0]?.rawValue
+        if (code && addProductByCode(code)) {
+          stopCameraScanner()
+        }
+      } catch (error) {
+        console.debug('Barcode scan error:', error)
+      }
+    }, 650)
+
+    return () => window.clearInterval(interval)
+  }, [isScanning, addProductByCode])
+
+  useEffect(() => {
+    return () => stopCameraScanner()
+  }, [])
 
   return (
     <div className="grid gap-4 text-black dark:text-white" style={{ gridTemplateColumns: '1.8fr 0.8fr', height: 'calc(100vh - 140px)' }}>
@@ -84,7 +165,8 @@ export default function CaissePage({
       <div className="bg-white dark:bg-[#0f1117] rounded-2xl p-4 border border-gray-100 dark:border-[#2b344d] shadow-sm flex flex-col overflow-hidden">
         {/* Scanner */}
         <div className="rounded-xl p-3 mb-4 border-2 border-dashed border-blue-200 bg-blue-50 dark:bg-[#071126] dark:border-blue-900 flex-shrink-0">
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
             <input
               type="text"
               value={barcode}
@@ -101,6 +183,24 @@ export default function CaissePage({
             >
               Scanner
             </button>
+            <button
+              onClick={isScanning ? stopCameraScanner : startCameraScanner}
+              className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110"
+              style={{ background: isScanning ? '#ef4444' : '#22c55e' }}
+            >
+              {isScanning ? 'Arreter camera' : 'Camera'}
+            </button>
+            </div>
+            {scanMessage && (
+              <p className={`text-xs font-medium ${scanMessage.includes('Aucun') || scanMessage.includes('Impossible') || scanMessage.includes('non supporte') ? 'text-red-500' : 'text-green-600'}`}>
+                {scanMessage}
+              </p>
+            )}
+            {isScanning && (
+              <div className="rounded-xl overflow-hidden border border-blue-200 dark:border-blue-900 bg-black">
+                <video ref={videoRef} className="w-full h-44 object-cover" muted playsInline />
+              </div>
+            )}
           </div>
         </div>
 

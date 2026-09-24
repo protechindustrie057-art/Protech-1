@@ -1,18 +1,21 @@
 {
-  "name": "SK Parfumerie login",
+  "name": "protech-touch",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "prepare-release": "npm run build && node scripts/prepare-release.js",
-    "build-installer": "iscc SK_Parfumerie.iss",
+    "prepare-release:with-env": "npm run build && set INCLUDE_ENV=true&& node scripts/prepare-release.js",
+    "prepare-release:portable": "npm run build && set INCLUDE_ENV=true&& set INCLUDE_PORTABLE=true&& node scripts/prepare-release.js",
+    "build-installer": "iscc ProTech_Touch.iss",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.0",
     "autoprefixer": "^10.4.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "dexie": "^4.4.2",

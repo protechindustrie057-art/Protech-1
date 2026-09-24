@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { ActivityLog } from '@/lib/types'
 import { apiCall } from '@/lib/api'
@@ -49,9 +50,12 @@ export default function ActivityLogsPage() {
 
   return (
     <div className="text-black dark:text-white">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold font-serif text-gray-800 dark:text-white">Activite utilisateurs</h2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600">
+            Retour au tableau de bord
+          </Link>
           <select
             value={filter}
             onChange={(event) => setFilter(event.target.value)}

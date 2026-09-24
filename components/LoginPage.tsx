@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { User } from '@/lib/types'
 import { authenticate } from '@/lib/store'
 
@@ -29,7 +29,28 @@ export default function LoginPage({ onLogin }: Props) {
   const [now, setNow] = useState(Date.now())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const onLoginRef = useRef(onLogin)
   const [logoAvailable, setLogoAvailable] = useState(true)
+
+  useEffect(() => {
+    onLoginRef.current = onLogin
+  }, [onLogin])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const authError = params.get('auth_error')
+    if (authError) {
+      setError('Connexion Google refusee. Verifiez que votre email est autorise.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+
+    fetch('/api/auth/google/session')
+      .then((response) => response.json())
+      .then((result) => {
+        if (result?.data?.user) onLoginRef.current(result.data.user)
+      })
+      .catch(() => {})
+  }, [])
 
   // Countdown tick
   const startTimer = (until: number) => {
@@ -57,6 +78,7 @@ export default function LoginPage({ onLogin }: Props) {
     if (isLocked || isSubmitting) return
 
     setIsSubmitting(true)
+    try {
     const user = await authenticate(email, password)
     if (user) {
       setAttempts(0)
@@ -75,7 +97,12 @@ export default function LoginPage({ onLogin }: Props) {
         setError(`Email ou mot de passe incorrect. ${left} tentative(s) restante(s).`)
       }
     }
-    setIsSubmitting(false)
+    } catch (error) {
+      console.error(error)
+      setError('Connexion impossible. Reessayez dans quelques instants.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   function handleRegister(e: React.FormEvent) {
@@ -83,6 +110,10 @@ export default function LoginPage({ onLogin }: Props) {
     setError('')
     if (!regName || !regEmail || !regPw) {
       setError('Tous les champs sont requis.')
+      return
+    }
+    if (regPw.length < 8) {
+      setError('Mot de passe trop court (min 8 caracteres).')
       return
     }
     if (regPw !== regConfirm) {
@@ -131,7 +162,7 @@ export default function LoginPage({ onLogin }: Props) {
 
       {/* Card */}
       <div
-        className="relative z-10 w-full max-w-md mx-4 rounded-3xl p-10 shadow-2xl"
+        className="relative z-10 w-full max-w-sm mx-4 rounded-3xl p-7 shadow-2xl"
         style={{
           background: 'rgba(8, 15, 38, 0.96)',
           border: '1px solid rgba(59, 130, 246, 0.35)',
@@ -139,12 +170,12 @@ export default function LoginPage({ onLogin }: Props) {
         }}
       >
         {/* Header */}
-        <header className="text-center mb-7">
-          <div className="w-24 h-24 mx-auto rounded-full flex items-center justify-center text-5xl mb-4 shadow-lg overflow-hidden" aria-label="Logo SK Parfumerie">
+        <header className="text-center mb-5">
+          <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-3 shadow-lg overflow-hidden" aria-label="Logo ProTech Touch">
             {logoAvailable ? (
               <img
                 src="/logo.png"
-                alt="Logo SK Parfumerie"
+                alt="Logo ProTech Touch"
                 className="w-full h-full object-cover"
                 onError={() => setLogoAvailable(false)}
               />
@@ -157,12 +188,12 @@ export default function LoginPage({ onLogin }: Props) {
               </div>
             )}
           </div>
-          <h1 className="text-2xl font-bold font-serif text-white">SK PARFUMERIE &amp; COSMÉTIQUES</h1>
+          <h1 className="text-2xl font-bold font-serif text-white">ProTech Touch</h1>
           <p className="text-sm text-blue-200 mt-1">Système de gestion professionnel</p>
         </header>
 
         {/* Tabs */}
-        <div className="flex gap-2 bg-gray-100 rounded-xl p-1 mb-6">
+        <div className="hidden gap-2 bg-gray-100 rounded-xl p-1 mb-6">
           {(['login', 'register'] as const).map((t) => (
             <button
               key={t}
@@ -182,7 +213,7 @@ export default function LoginPage({ onLogin }: Props) {
         {/* Login form */}
         {tab === 'login' && (
           <form onSubmit={handleLogin} noValidate>
-            <div className="mb-5">
+            <div className="mb-4">
               <label htmlFor="loginEmail" className="block text-sm font-semibold text-gray-600 mb-1.5">
                 Email
               </label>
@@ -198,7 +229,7 @@ export default function LoginPage({ onLogin }: Props) {
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <label htmlFor="loginPw" className="block text-sm font-semibold text-gray-600 mb-1.5">
                 Mot de passe
               </label>
@@ -239,18 +270,20 @@ export default function LoginPage({ onLogin }: Props) {
             <button
               type="submit"
               disabled={isLocked || isSubmitting}
-              className="w-full py-4 rounded-xl font-bold text-base transition-all mb-4 disabled:opacity-40"
+              className="w-full py-3.5 rounded-xl font-bold text-sm transition-all mb-3 disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg,#ffd700,#ffaa00)', color: '#0a0f1e' }}
             >
               {isSubmitting ? 'CONNEXION...' : 'SE CONNECTER'}
             </button>
 
-            <p className="text-center text-sm text-gray-500">
-              Pas encore de compte?{' '}
-              <button type="button" onClick={() => setTab('register')} className="font-semibold" style={{ color: '#d4a017' }}>
-                S&apos;inscrire
-              </button>
-            </p>
+            <a
+              href="/api/auth/google/start"
+              className="w-full py-3 rounded-xl font-bold text-sm transition-all mb-2 flex items-center justify-center gap-2 bg-white text-gray-800 hover:bg-gray-100"
+            >
+              <span className="text-lg font-bold text-blue-600">G</span>
+              Continuer avec Google
+            </a>
+
           </form>
         )}
 

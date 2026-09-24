@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import type { User, Product, CartItem, Invoice, AppSettings, Currency, ContentPage } from '@/lib/types'
+import type { User, Product, CartItem, Invoice, AppSettings, Currency, ContentPage, UserPresence } from '@/lib/types'
 import type { Language } from '@/lib/types'
 import {
   loadProductsFromLS, saveProductsToLS,
@@ -17,6 +17,7 @@ import { initSync, enqueuePendingOperation, getPendingCount, synchronize } from 
 
 import LoginPage from '@/components/LoginPage'
 import Header from '@/components/Header'
+import GlobalTranslator from '@/components/GlobalTranslator'
 import Sidebar from '@/components/Sidebar'
 import ToastContainer from '@/components/ToastContainer'
 import DashboardPage from '@/components/pages/DashboardPage'
@@ -25,6 +26,7 @@ import ProductsPage from '@/components/pages/ProductsPage'
 import UsersPage from '@/components/pages/UsersPage'
 import FacturesPage from '@/components/pages/FacturesPage'
 import ActivityLogsPage from '@/components/pages/ActivityLogsPage'
+import DailyReportsPage from '@/components/pages/DailyReportsPage'
 import PrintersPage from '@/components/pages/PrintersPage'
 import SettingsPage from '@/components/pages/SettingsPage'
 import type { ToastMessage, ToastType } from '@/lib/types'
@@ -42,17 +44,21 @@ interface InvoiceModalProps {
   printerName: string | null
   invoiceType: 'ticket' | 'facture'
   onTypeChange: (type: 'ticket' | 'facture') => void
-  onConfirm: (client: string, remise: number, type: 'ticket' | 'facture', preview?: boolean) => void
+  onConfirm: (client: string, clientPhone: string, remise: number, type: 'ticket' | 'facture', preview?: boolean) => void
   onClose: () => void
 }
 
 function InvoiceModal({ cart, settings, currency, usdRate, caissierName, printerName, invoiceType, onTypeChange, onConfirm, onClose }: InvoiceModalProps) {
   const [client, setClient] = useState('')
+  const [clientPhone, setClientPhone] = useState('')
   const [remise, setRemise] = useState(0)
   const fmt = (n: number) => formatPrice(n, currency, usdRate)
   const sousTotal = cart.reduce((s, i) => s + i.total, 0)
   const montantRemise = (sousTotal * remise) / 100
-  const total = sousTotal - montantRemise
+  const taxableAmount = sousTotal - montantRemise
+  const taxRate = Math.max(0, Number(settings.taxRate || 0))
+  const montantTva = (taxableAmount * taxRate) / 100
+  const total = taxableAmount + montantTva
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -95,14 +101,26 @@ function InvoiceModal({ cart, settings, currency, usdRate, caissierName, printer
 
         {/* Client + remise */}
         <div className="space-y-3 mb-5">
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Nom du client</label>
-            <input
-              value={client}
-              onChange={(e) => setClient(e.target.value)}
-              placeholder="Client anonyme"
-              className="w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 focus:border-yellow-400 focus:outline-none text-sm"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Nom du client</label>
+              <input
+                value={client}
+                onChange={(e) => setClient(e.target.value)}
+                placeholder="Client anonyme"
+                className="w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 focus:border-yellow-400 focus:outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Numero du client</label>
+              <input
+                type="tel"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                placeholder="+243 ..."
+                className="w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 focus:border-yellow-400 focus:outline-none text-sm"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Remise (%)</label>
@@ -149,6 +167,9 @@ function InvoiceModal({ cart, settings, currency, usdRate, caissierName, printer
               <span>Remise ({remise}%)</span><span>- {fmt(montantRemise)}</span>
             </div>
           )}
+          <div className="flex justify-between text-gray-600">
+            <span>TVA ({taxRate}%)</span><span>{fmt(montantTva)}</span>
+          </div>
           <div className="flex justify-between font-extrabold text-base text-blue-600 border-t border-gray-200 pt-2">
             <span>TOTAL</span><span>{fmt(total)}</span>
           </div>
@@ -156,14 +177,14 @@ function InvoiceModal({ cart, settings, currency, usdRate, caissierName, printer
 
         <div className="flex gap-3">
           <button
-            onClick={() => onConfirm(client || 'Client anonyme', remise, invoiceType, true)}
+            onClick={() => onConfirm(client || 'Client anonyme', clientPhone.trim(), remise, invoiceType, true)}
             disabled={!printerName}
             className="flex-1 py-3 rounded-xl font-bold text-black bg-yellow-300 hover:bg-yellow-400 transition-all disabled:opacity-50"
           >
             Prévisualiser
           </button>
           <button
-            onClick={() => onConfirm(client || 'Client anonyme', remise, invoiceType, false)}
+            onClick={() => onConfirm(client || 'Client anonyme', clientPhone.trim(), remise, invoiceType, false)}
             disabled={!printerName}
             className="flex-1 py-3 rounded-xl font-bold text-white hover:brightness-110 transition-all disabled:opacity-50"
             style={{ background: '#22c55e' }}
@@ -191,24 +212,30 @@ export default function App() {
 
   // UI state
   const [currentPage, setCurrentPage] = useState<ContentPage>('dashboard')
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('protech_theme') === 'dark'
+  })
   const [language, setLanguage] = useState<Language>('fr')
   const [currency, setCurrency] = useState<Currency>('CDF')
   const [toasts, setToasts] = useState<ToastMessage[]>([])
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
   const [pendingCount, setPendingCount] = useState(0)
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
 
   const PRINTER_INFO = [
     { key: 'epson', name: 'EPSON TM-T20/T88', icon: '🖨️' },
     { key: 'xprinter', name: 'XPRINTER XP-58/80', icon: '🖨️' },
     { key: 'bluetooth', name: 'Bluetooth', icon: '🔵' },
+    { key: 'standard', name: 'Imprimante standard', icon: 'A4' },
   ] as const
   type PrinterKey = (typeof PRINTER_INFO)[number]['key']
-  type PrinterState = { connected: boolean; paperSize: '80' | '58' }
+  type PrinterState = { connected: boolean; paperSize: '80' | '58' | 'A4' }
   const INITIAL_PRINTERS: Record<PrinterKey, PrinterState> = {
     epson: { connected: false, paperSize: '80' },
     xprinter: { connected: false, paperSize: '80' },
     bluetooth: { connected: false, paperSize: '80' },
+    standard: { connected: false, paperSize: 'A4' },
   }
 
   const [printers, setPrinters] = useState<Record<PrinterKey, PrinterState>>(INITIAL_PRINTERS)
@@ -224,13 +251,22 @@ export default function App() {
   const [caissiers, setCaissiers] = useState<User[]>([])
   const [managers, setManagers] = useState<User[]>([])
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [onlinePresences, setOnlinePresences] = useState<UserPresence[]>([])
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   const [hydrated, setHydrated] = useState(false)
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(false)
 
   // Hydrate from localStorage once mounted
   useEffect(() => {
     const s = loadSettingsFromLS()
+    const savedLanguage = localStorage.getItem('protech_language') as Language | null
+    const savedTheme = localStorage.getItem('protech_theme')
+    const savedUser = localStorage.getItem('protech_session_user')
+
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      setDarkMode(savedTheme === 'dark')
+    }
+
     setProducts(loadProductsFromLS())
     setCart(loadCartFromLS())
     setInvoices(loadInvoicesFromLS())
@@ -238,12 +274,39 @@ export default function App() {
     setManagers(loadUsersFromLS('manager'))
     setSettings(s)
     setCurrency(s.defaultCurrency)
+    if (savedLanguage === 'fr' || savedLanguage === 'en' || savedLanguage === 'de') {
+      setLanguage(savedLanguage)
+    }
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser) as User
+        if (parsedUser && parsedUser.id && parsedUser.name && parsedUser.role) {
+          setUser(parsedUser)
+          setCurrentPage(parsedUser.role === 'caisse' ? 'caisse' : 'dashboard')
+        }
+      } catch {
+        localStorage.removeItem('protech_session_user')
+      }
+    }
     setHydrated(true)
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowSplash(false), 10000)
-    return () => window.clearTimeout(timer)
+    if (!hydrated) return
+    localStorage.setItem('protech_language', language)
+  }, [hydrated, language])
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (user) {
+      localStorage.setItem('protech_session_user', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('protech_session_user')
+    }
+  }, [hydrated, user])
+
+  useEffect(() => {
+    setShowSplash(false)
   }, [])
 
   useEffect(() => {
@@ -259,9 +322,68 @@ export default function App() {
     setPendingCount(await getPendingCount())
   }, [])
 
+  function getMachineId() {
+    const key = 'protech_machine_id'
+    const existing = localStorage.getItem(key)
+    if (existing) return existing
+
+    const id = `machine-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+    localStorage.setItem(key, id)
+    return id
+  }
+
+  function getMachineName() {
+    const platform = navigator.platform || 'Machine'
+    const browser = navigator.userAgent.includes('Edg')
+      ? 'Edge'
+      : navigator.userAgent.includes('Chrome')
+        ? 'Chrome'
+        : navigator.userAgent.includes('Firefox')
+          ? 'Firefox'
+          : 'Navigateur'
+
+    return `${platform} - ${browser}`
+  }
+
+  const refreshPresence = useCallback(async () => {
+    if (!navigator.onLine) return
+    const response = await apiCall<UserPresence[]>('presence')
+    setOnlinePresences(response.data || [])
+  }, [])
+
+  useEffect(() => {
+    if (!user) {
+      setOnlinePresences([])
+      return
+    }
+
+    const machineId = getMachineId()
+    const payload = {
+      user,
+      machineId,
+      machineName: getMachineName(),
+    }
+
+    async function heartbeat() {
+      if (!navigator.onLine) return
+      await apiCall('presence', payload, 'POST').catch(() => {})
+      await refreshPresence().catch(() => {})
+    }
+
+    void heartbeat()
+    const interval = window.setInterval(heartbeat, 30000)
+
+    return () => {
+      window.clearInterval(interval)
+    }
+  }, [user, refreshPresence])
+
   // Dark mode toggle — applies .dark class on <html> so Tailwind dark: variants work
   useEffect(() => {
+    if (typeof document === 'undefined') return
     document.documentElement.classList.toggle('dark', darkMode)
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light'
+    localStorage.setItem('protech_theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
 
   // ── Toast helpers ──────────────────────────────────────
@@ -318,24 +440,84 @@ export default function App() {
   }
 
   // ── Auth ───────────────────────────────────────────────
+  async function handleRefreshData() {
+    if (isRefreshingData) return
+    if (!navigator.onLine) {
+      addToast('Hors ligne', 'Impossible d’actualiser les donnees sans connexion.', 'warning')
+      return
+    }
+
+    setIsRefreshingData(true)
+    try {
+      await synchronize()
+
+      const [productsResponse, usersResponse, invoicesResponse, settingsResponse, presenceResponse] = await Promise.all([
+        apiCall<Product[]>('products'),
+        apiCall<User[]>('users'),
+        apiCall<Invoice[]>('invoices'),
+        apiCall<AppSettings | null>('settings'),
+        apiCall<UserPresence[]>('presence'),
+      ])
+
+      const freshProducts = (productsResponse.data || []).map((product: any) => ({
+        ...product,
+        category: product.category || product.category_slug || 'divers',
+      })) as Product[]
+      const freshUsers = usersResponse.data || []
+      const freshInvoices = invoicesResponse.data || []
+      const freshSettings = settingsResponse.data
+      const freshPresences = presenceResponse.data || []
+
+      setProducts(freshProducts)
+      saveProductsToLS(freshProducts)
+
+      setInvoices(freshInvoices)
+      saveInvoicesToLS(freshInvoices)
+
+      const freshCaissiers = freshUsers.filter((item) => item.role === 'caisse')
+      const freshManagers = freshUsers.filter((item) => item.role === 'manager')
+      setCaissiers(freshCaissiers)
+      setManagers(freshManagers)
+      saveUsersToLS('caisse', freshCaissiers)
+      saveUsersToLS('manager', freshManagers)
+
+      if (freshSettings && 'defaultCurrency' in freshSettings) {
+        const normalizedSettings = { ...freshSettings, taxRate: Number((freshSettings as any).taxRate || 0) }
+        setSettings(normalizedSettings)
+        saveSettingsToLS(normalizedSettings)
+        setCurrency(normalizedSettings.defaultCurrency)
+      }
+
+      setOnlinePresences(freshPresences)
+
+      await refreshPendingCount()
+      addToast('Données actualisées', 'Les donnees ont ete rechargees sans fermer la session.', 'success')
+    } catch (error) {
+      console.error(error)
+      addToast('Actualisation impossible', 'Impossible de recharger les donnees depuis le serveur.', 'error')
+    } finally {
+      setIsRefreshingData(false)
+    }
+  }
+
   function handleLogin(u: User) {
     setUser(u)
+    localStorage.setItem('protech_session_user', JSON.stringify(u))
     const defaultPage: ContentPage = u.role === 'caisse' ? 'caisse' : 'dashboard'
     setCurrentPage(defaultPage)
-    if (navigator.onLine) {
-      void apiCall('activity-logs', {
-        action: 'login',
-        summary: `${u.name} s'est connecte`,
-        entity: 'auth',
-        actor: { id: u.id, name: u.name, email: u.email, role: u.role },
-      }, 'POST').catch((error) => console.warn('Activity log failed:', error))
-    }
     addToast('Connexion réussie', `Bienvenue, ${u.name} !`, 'success')
   }
 
   function handleLogout() {
     recordActivity('logout', `${user?.name || 'Utilisateur'} s'est deconnecte`, 'auth')
+    void apiCall('auth/google/logout', {}, 'POST').catch(() => {})
+    const machineId = localStorage.getItem('protech_machine_id')
+    if (machineId) {
+      void apiCall(`presence?machineId=${encodeURIComponent(machineId)}`, undefined, 'DELETE').catch(() => {})
+    }
     setUser(null)
+    localStorage.removeItem('protech_session_user')
+    setOnlinePresences([])
     setCart([])
     saveCartToLS([])
     addToast('Déconnexion', 'À bientôt !', 'info')
@@ -353,7 +535,7 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `sk-parfumerie-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `protech-touch-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
     addToast('Export réussi', 'Données exportées avec succès.', 'success')
@@ -468,16 +650,17 @@ export default function App() {
     setSelectedPrinter(key)
   }
 
-  function changePrinterSize(key: PrinterKey, size: '58' | '80') {
+  function changePrinterSize(key: PrinterKey, size: '58' | '80' | 'A4') {
     setPrinters((prev) => ({
       ...prev,
       [key]: { ...prev[key], paperSize: size },
     }))
   }
 
-  const connectedPrinter = Object.entries(printers).find(([, state]) => state.connected)
-  const activePrinterName = connectedPrinter
-    ? PRINTER_INFO.find((item) => item.key === connectedPrinter[0])?.name ?? connectedPrinter[0]
+  const selectedPrinterState = printers[selectedPrinter]
+  const activePrinter = selectedPrinterState.connected ? { key: selectedPrinter, state: selectedPrinterState } : null
+  const activePrinterName = activePrinter
+    ? PRINTER_INFO.find((item) => item.key === activePrinter.key)?.name ?? activePrinter.key
     : null
 
   // ── Checkout (quick sale without invoice) ─────────────
@@ -506,30 +689,41 @@ export default function App() {
   }
 
   // ── Invoice creation ───────────────────────────────────
-  function handleConfirmInvoice(client: string, remise: number, type: 'ticket' | 'facture', preview = false) {
+  function handleConfirmInvoice(client: string, clientPhone: string, remise: number, type: 'ticket' | 'facture', preview = false) {
     if (cart.length === 0) return
-    if (!connectedPrinter) {
+    if (!activePrinter) {
       addToast('Erreur d’impression', 'Aucune imprimante connectée. Veuillez en connecter une dans la page Imprimantes.', 'error')
+      return
+    }
+
+    if (type === 'ticket' && activePrinter.key === 'standard') {
+      addToast('Imprimante standard', 'L’imprimante standard est prévue pour les factures A4. Choisissez EPSON, XPRINTER ou Bluetooth pour un ticket.', 'warning')
       return
     }
 
     const sousTotal = cart.reduce((s, i) => s + i.total, 0)
     const montantRemise = (sousTotal * remise) / 100
-    const total = sousTotal - montantRemise
+    const taxableAmount = sousTotal - montantRemise
+    const tvaRate = Math.max(0, Number(settings?.taxRate || 0))
+    const montantTva = (taxableAmount * tvaRate) / 100
+    const total = taxableAmount + montantTva
     const now = new Date()
 
     const invoice: Invoice = {
       id: Date.now(),
       type,
-      paperSize: connectedPrinter[1].paperSize,
+      paperSize: activePrinter.state.paperSize,
       numero: `${type === 'ticket' ? 'TKT' : 'FAC'}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`,
       date: now.toLocaleString('fr-CD'),
       client,
+      clientPhone,
       caissier: user?.name || 'Caissier',
       articles: cart.map((i) => ({ nom: i.name, prix: i.price, quantite: i.quantity, total: i.total })),
       sousTotal,
       remise,
       montantRemise,
+      tvaRate,
+      montantTva,
       total,
     }
 
@@ -635,39 +829,41 @@ export default function App() {
   const usdRate = settings?.usdRate ?? 2850
   const totalUsers = 1 + caissiers.length + managers.length
 
-  // ── Render: not hydrated yet or splash still visible ───────────────────────────
-  if (!hydrated || showSplash) {
+  // ── Render: not hydrated yet ───────────────────────────
+  if (!hydrated) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#0a0f1e' }}>
-        <div className="text-center text-white">
+      <>
+      <GlobalTranslator language={language} />
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-100 dark:bg-[#0f1117]">
+        <div className="text-center text-slate-700 dark:text-slate-200">
           <div
-            className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-yellow-400 border-t-transparent"
+            className="w-14 h-14 mx-auto mb-4 rounded-full border-4 border-yellow-400 border-t-transparent"
             style={{ animation: 'spin 0.8s linear infinite' }}
             aria-label="Chargement"
             role="status"
           />
-          <p className="font-serif text-lg text-yellow-400">SK Parfumérie et Cosmétiques</p>
-          <p className="text-xs text-gray-400 mt-1">Chargement...</p>
-          <div className="mt-6 text-xs text-gray-400 leading-relaxed text-center">
-            <p>2026 Copyright SK Parfumerie et Cosmétiques</p>
-            <p>Edited by Prosper Ming'a MUYA</p>
-            <p>Kinshasa RDC, Kintambo</p>
-            <p>Infos. : +243 992 381 922</p>
-          </div>
+          <p className="font-semibold text-lg">Chargement...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
+      </>
     )
   }
 
   // ── Render: login ──────────────────────────────────────
   if (!user) {
-    return <LoginPage onLogin={handleLogin} />
+    return (
+      <>
+        <GlobalTranslator language={language} />
+        <LoginPage onLogin={handleLogin} />
+      </>
+    )
   }
 
   // ── Render: main app ───────────────────────────────────
   return (
     <>
+      <GlobalTranslator language={language} />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       <Header
@@ -678,7 +874,9 @@ export default function App() {
         currency={currency}
         onCurrencyChange={setCurrency}
         onExport={handleExport}
-        companyName="SK Parfumerie"
+        onRefresh={handleRefreshData}
+        isRefreshing={isRefreshingData}
+        companyName="ProTech Touch"
         companyLogo={settings?.companyLogo}
       />
 
@@ -691,6 +889,7 @@ export default function App() {
         syncStatus={syncStatus}
         pendingCount={pendingCount}
         darkMode={darkMode}
+        companyLogo={settings?.companyLogo}
       />
 
       {/* Main content — always offset by the collapsed rail (60px) */}
@@ -705,6 +904,7 @@ export default function App() {
             users={totalUsers}
             currency={currency}
             usdRate={usdRate}
+            presences={onlinePresences}
           />
         )}
 
@@ -740,6 +940,7 @@ export default function App() {
           <UsersPage
             users={caissiers}
             role="caisse"
+            presences={onlinePresences}
             onSave={(data, id) => handleSaveUser('caisse', data, id)}
             onDelete={(id) => handleDeleteUser('caisse', id)}
           />
@@ -749,6 +950,7 @@ export default function App() {
           <UsersPage
             users={managers}
             role="manager"
+            presences={onlinePresences}
             onSave={(data, id) => handleSaveUser('manager', data, id)}
             onDelete={(id) => handleDeleteUser('manager', id)}
           />
@@ -783,6 +985,7 @@ export default function App() {
             onLogoChange={handleLogoChange}
           />
         )}
+        {currentPage === 'reports' && user && (user.role === 'admin' || user.role === 'manager' || user.role === 'caisse') && <DailyReportsPage user={user} />}
       </main>
 
       {/* Invoice modal */}
@@ -827,6 +1030,9 @@ export default function App() {
 
             <div style={{ marginBottom: 18 }}>
               <p style={{ margin: '0 0 4px', fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>Client : {printInvoice.client}</p>
+              {printInvoice.clientPhone && (
+                <p style={{ margin: '0 0 4px', fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>Numero : {printInvoice.clientPhone}</p>
+              )}
               <p style={{ margin: '0 0 4px', fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>Caissier : {printInvoice.caissier}</p>
               <p style={{ margin: 0, fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>Imprimante : {activePrinterName || 'Non définie'}</p>
             </div>
@@ -861,6 +1067,10 @@ export default function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>
                   <span>Remise</span>
                   <span>-{formatPrice(printInvoice.montantRemise, currency, usdRate)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 10 : 12 }}>
+                  <span>TVA ({printInvoice.tvaRate ?? 0}%)</span>
+                  <span>{formatPrice(printInvoice.montantTva ?? 0, currency, usdRate)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginTop: 8, fontSize: printInvoice.type === 'ticket' && printInvoice.paperSize === '58' ? 11 : 12 }}>
                   <span>Total</span>

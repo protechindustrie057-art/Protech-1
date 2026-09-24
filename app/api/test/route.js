@@ -1,9 +1,16 @@
 import { getMongoDb } from '@/lib/mongodb'
 import { NextResponse } from 'next/server'
+import { requireInternalEndpointAccess } from '@/lib/internalEndpoint'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req) {
+  const denied = requireInternalEndpointAccess(req, {
+    enabledEnv: 'ENABLE_TEST_API',
+    tokenEnv: 'TEST_API_TOKEN',
+  })
+  if (denied) return denied
+
   try {
     const db = await getMongoDb()
     const collections = await db.listCollections().toArray()
@@ -11,7 +18,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: 'Connexion MongoDB reussie !',
-      database: process.env.MONGODB_DB || 'sk_parfumerie',
+      database_present: Boolean(process.env.MONGODB_DB),
       collections: collections.map((c) => c.name),
     })
   } catch (error) {
@@ -19,7 +26,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: 'Erreur MongoDB',
       },
       { status: 500 },
     )

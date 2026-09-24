@@ -42,7 +42,7 @@ function getClientPromise() {
 
 export async function getMongoDb() {
   const client = await getClientPromise()
-  const dbName = process.env.MONGODB_DB || 'sk_parfumerie'
+  const dbName = process.env.MONGODB_DB || 'protech_touch_db'
   return client.db(dbName)
 }
 

@@ -50,7 +50,7 @@ if ($method === 'POST') {
 
     if (!$name || !$email || !$password) jsonError('Nom, email et mot de passe sont requis');
     if (!in_array($role, ['admin', 'manager', 'caisse'], true)) jsonError('Rôle invalide');
-    if (strlen($password) < 6) jsonError('Mot de passe trop court (min 6 caractères)');
+    if (strlen($password) < 8) jsonError('Mot de passe trop court (min 8 caractères)');
 
     // Check email uniqueness
     $exists = $db->prepare('SELECT id FROM users WHERE email = ?');
@@ -92,7 +92,7 @@ if ($method === 'PUT') {
         if (!password_verify($body['current_password'], $row['password_hash'])) {
             jsonError('Mot de passe actuel incorrect');
         }
-        if (strlen($body['new_password']) < 6) jsonError('Nouveau mot de passe trop court (min 6 caractères)');
+        if (strlen($body['new_password']) < 8) jsonError('Nouveau mot de passe trop court (min 8 caractères)');
 
         $hash = password_hash($body['new_password'], PASSWORD_BCRYPT, ['cost' => 12]);
         $db->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([$hash, $id]);

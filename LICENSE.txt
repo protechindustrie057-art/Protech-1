@@ -1,0 +1,68 @@
+CONTRAT DE LICENCE UTILISATEUR FINAL (CLUF)
+ProTech Touch - Gestion Professionnelle
+
+Version 6.0 - 2026
+
+1. OBJET DU LOGICIEL
+ProTech Touch (ci-apres "le Logiciel") est destine uniquement a la gestion interne des ventes, stocks, facturation et utilisateurs d'une entreprise cliente.
+Toute utilisation en dehors de ce cadre necessite une autorisation ecrite de l'editeur.
+
+2. PROPRIETE INTELLECTUELLE
+Le Logiciel, son code source, son design, ses animations, sa base de donnees, ses marques (ProTech Touch, logos, icones) et sa documentation sont la propriete exclusive de l'editeur.
+Aucun droit de propriete n'est transfere a l'utilisateur.
+
+3. RESTRICTIONS D'USAGE
+Il est strictement interdit de :
+
+Copier, modifier, desassembler, decompiler ou creer des oeuvres derivees du Logiciel.
+
+Louer, vendre, redistribuer, sous-licencier ou mettre a disposition le Logiciel a un tiers sans accord ecrit.
+
+Utiliser le Logiciel pour des activites illegales ou concurrentes a l'editeur.
+
+Supprimer ou masquer les mentions de droit d'auteur, credits ou liens vers l'editeur.
+
+4. CONDITIONS D'UTILISATION
+4.1. Sauvegarde - L'utilisateur est seul responsable de la sauvegarde reguliere de ses donnees (produits, ventes, factures, caissiers, managers, parametres). L'editeur recommande une sauvegarde externe quotidienne ou hebdomadaire.
+4.2. Responsabilite - L'editeur ne peut etre tenu responsable des pertes, alterations ou indisponibilites des donnees resultant de :
+
+Mauvaise configuration ou erreur humaine,
+
+Coupure electrique ou panne materielle,
+
+Interruption de la connexion Internet ou panne du serveur,
+
+Infection par virus ou attaque informatique,
+
+Utilisation non conforme du Logiciel.
+4.3. Securite des acces - Les identifiants administrateur, manager et caissier doivent etre conserves de maniere confidentielle. L'utilisateur est responsable de toute action effectuee via ses comptes.
+4.4. Conformite legale - L'utilisateur s'engage a respecter les lois en vigueur (protection des donnees, facturation, fiscalite) dans le cadre de l'utilisation du Logiciel.
+
+5. GARANTIES ET LIMITATIONS
+Le Logiciel est fourni "en l'etat", sans garantie explicite ou implicite (compatibilite, performance, absence d'erreur).
+L'editeur s'efforce d'assurer un fonctionnement stable, mais ne garantit pas une disponibilite ininterrompue.
+En aucun cas, l'editeur ne pourra etre tenu responsable des prejudices indirects, pertes de benefices, manque a gagner ou dommages lies a l'utilisation ou l'impossibilite d'utiliser le Logiciel.
+
+6. DUREE ET RESILIATION
+La licence est accordee pour une duree indeterminee.
+L'editeur peut resilier immediatement la licence en cas de non-respect des presentes conditions.
+En cas de resiliation, l'utilisateur doit cesser toute utilisation du Logiciel et le desinstaller.
+
+7. DONNEES PERSONNELLES & CONFIDENTIALITE
+L'editeur n'a pas acces aux donnees saisies par l'utilisateur (clients, ventes, factures, mots de passe), sauf assistance technique expressement sollicitee.
+L'utilisateur est responsable du traitement des donnees a caractere personnel conformement au RGPD ou a la legislation locale.
+
+8. MODIFICATIONS DU LOGICIEL ET DES CONDITIONS
+L'editeur se reserve le droit de mettre a jour le Logiciel (correctifs, nouvelles fonctionnalites, securite).
+Les presentes conditions peuvent etre modifiees ; la version en vigueur est celle disponible lors de l'installation ou sur le site officiel.
+
+9. DROIT APPLICABLE ET JURIDICTION
+Ce contrat est regi par le droit de la Republique Democratique du Congo.
+En cas de litige, les tribunaux de Kinshasa/Ngaliema sont seuls competents.
+
+10. ACCEPTATION
+L'installation, la copie ou l'utilisation du Logiciel emporte acceptation pleine et entière des presentes conditions.
+Si vous n'acceptez pas ces termes, vous devez annuler l'installation et supprimer tout fichier lié a ProTech Touch.
+
+Editeur : Prosming Prosper Minga Pro - Kinshasa, Ngaliema, RDC
+Contact : prosperingpro@gmail.com

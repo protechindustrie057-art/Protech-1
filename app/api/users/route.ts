@@ -1,5 +1,6 @@
 import { getDb, jsonError, jsonOk, readJson, handleApi } from '@/lib/apiServer'
 import { createActivityLog, getActorFromBody } from '@/lib/activityLog'
+import { hashServerPassword, MIN_PASSWORD_LENGTH } from '@/lib/serverPassword'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,30 @@ export async function GET() {
   return handleApi(async () => {
     const db = await getDb()
     const items = await db.collection('users').find().toArray()
-    return jsonOk(items)
+    const since = new Date(Date.now() - 2 * 60 * 1000)
+    const presence = await db
+      .collection('user_presence')
+      .find({ status: 'online', lastSeenAt: { $gte: since } })
+      .sort({ lastSeenAt: -1 })
+      .toArray()
+
+    const presenceByUser = new Map<number, any>()
+    for (const item of presence) {
+      if (!presenceByUser.has(item.userId)) presenceByUser.set(item.userId, item)
+    }
+
+    const withPresence = items.map((item: any) => {
+      const userPresence = presenceByUser.get(Number(item.id))
+      return {
+        ...item,
+        online: Boolean(userPresence),
+        last_seen: userPresence?.lastSeenAt || item.last_login || null,
+        machine_id: userPresence?.machineId || null,
+        machine_label: userPresence?.machineLabel || null,
+      }
+    })
+
+    return jsonOk(withPresence)
   })
 }
 
@@ -38,6 +62,15 @@ export async function POST(req: Request) {
 
     delete doc.password
     delete doc.actor
+
+    const password = String(body.password || '')
+    if (password && password.length < MIN_PASSWORD_LENGTH) {
+      return jsonError(`Mot de passe trop court (min ${MIN_PASSWORD_LENGTH} caracteres)`, 400)
+    }
+
+    if (password) {
+      doc.passwordHash = hashServerPassword(password)
+    }
 
     await db.collection('users').updateOne({ id }, { $set: doc }, { upsert: true })
     const user = await db.collection('users').findOne({ id })
@@ -70,6 +103,15 @@ export async function PUT(req: Request) {
 
     delete updates.password
     delete updates.actor
+
+    const password = String(body.password || '')
+    if (password && password.length < MIN_PASSWORD_LENGTH) {
+      return jsonError(`Mot de passe trop court (min ${MIN_PASSWORD_LENGTH} caracteres)`, 400)
+    }
+
+    if (password) {
+      updates.passwordHash = hashServerPassword(password)
+    }
 
     if (body.caisse_number !== undefined) updates.caisse_number = Number(body.caisse_number)
     await db.collection('users').updateOne({ id: Number(id) }, { $set: updates })

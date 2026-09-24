@@ -1,4 +1,4 @@
-# SK Parfumerie — Apache configuration
+# ProTech Touch — Apache configuration
 
 # Block direct access to config files
 <FilesMatch "\.(php)$">

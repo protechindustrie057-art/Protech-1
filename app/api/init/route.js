@@ -1,9 +1,16 @@
 import { getMongoDb } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
+import { requireInternalEndpointAccess } from '@/lib/internalEndpoint';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req) {
+  const denied = requireInternalEndpointAccess(req, {
+    enabledEnv: 'ENABLE_INIT_API',
+    tokenEnv: 'INIT_API_TOKEN',
+  });
+  if (denied) return denied;
+
   try {
     const db = await getMongoDb();
 
@@ -13,50 +20,50 @@ export async function GET() {
     const products = [
       {
         id: 1,
-        name: "Parfum Oud Royal",
-        price: 129.99,
+        name: "Cartouche d'encre noir 67A",
+        price: 28.99,
         stock: 25,
-        category: "parfums",
+        category: "cartouches",
         alert_threshold: 5,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: 2,
-        name: "Crème Hydratante Nivea",
-        price: 19.99,
+        name: "Papier A4 80g premium",
+        price: 12.99,
         stock: 100,
-        category: "cosmetiques",
+        category: "papier",
         alert_threshold: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: 3,
-        name: "Masque Visage Argile",
-        price: 29.99,
+        name: "Clé USB 32 Go",
+        price: 19.99,
         stock: 50,
-        category: "cosmetiques",
+        category: "stockage",
         alert_threshold: 8,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: 4,
-        name: "Eau de Parfum Chanel N°5",
-        price: 159.99,
+        name: "Câble USB-C vers USB-A",
+        price: 9.99,
         stock: 15,
-        category: "parfums",
+        category: "cables",
         alert_threshold: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: 5,
-        name: "Baume à Lèvres",
-        price: 9.99,
+        name: "Batterie portable 20 000 mAh",
+        price: 49.99,
         stock: 200,
-        category: "cosmetiques",
+        category: "accessoires",
         alert_threshold: 20,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -70,7 +77,7 @@ export async function GET() {
       {
         id: 1,
         name: "Prosper Minga",
-        email: "prosper@sk-parfumerie.com",
+        email: "prosper@protechtouch.com",
         role: "admin",
         createdAt: new Date()
       },
@@ -84,7 +91,7 @@ export async function GET() {
       {
         id: 3,
         name: "Manager Stock",
-        email: "stock@sk-parfumerie.com",
+        email: "stock@protechtouch.com",
         role: "manager",
         createdAt: new Date()
       }
@@ -96,7 +103,7 @@ export async function GET() {
     const settings = [
       {
         key: "company_name",
-        value: "SK Parfumerie & Cosmétiques",
+        value: "ProTech Touch",
         type: "string",
         updatedAt: new Date()
       },

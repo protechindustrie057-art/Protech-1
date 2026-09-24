@@ -1,12 +1,12 @@
 -- =====================================================
--- SK PARFUMERIE & COSMÉTIQUES — Schéma Base de Données
+-- PROTECH TOUCH — Schéma Base de Données
 -- =====================================================
 
-CREATE DATABASE IF NOT EXISTS sk_parfumerie
+CREATE DATABASE IF NOT EXISTS protech_touch
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE sk_parfumerie;
+USE protech_touch;
 
 -- ── Utilisateurs ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Compte admin par défaut (password: admin123)
 INSERT INTO users (name, email, password_hash, role) VALUES
-('Administrateur', 'admin@skparfumerie.cd', '$2y$12$0oCO3TzdK5s5vJHAExGvbODx/YpLCjVtC3U7OiGFJ7rn7hv3G8JaG', 'admin')
+('Administrateur', 'admin@protechtouch.cd', '$2y$12$0oCO3TzdK5s5vJHAExGvbODx/YpLCjVtC3U7OiGFJ7rn7hv3G8JaG', 'admin')
 ON DUPLICATE KEY UPDATE id=id;
 
 -- ── Catégories ────────────────────────────────────────

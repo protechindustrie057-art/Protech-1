@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# Protech-1
-Application de gestion pour ton activité d’impression numérique et maintenance  🏠 Tableau de bord
-=======
 # SK Parfumerie login
 
 
@@ -54,7 +50,7 @@ Required environment variables:
 
 - `MONGODB_URI` — MongoDB connection string
   - Pour le développement local, si vous n’avez pas de `.env.local`, l’application essaiera `mongodb://127.0.0.1:27017`.
-- `MONGODB_DB` — database name, e.g. `sk_parfumerie`
+ - `MONGODB_DB` — database name, e.g. `protech_touch_db`
 - `MONGODB_ALLOW_INVALID_CERTS` — `true` when your MongoDB certificate is self-signed/non-standard
 - `NEXT_PUBLIC_API_BASE_URL` — API base path, usually `/api`
 
@@ -82,7 +78,7 @@ npm install
 npm run prepare-release
 ```
 
-3. Open `SK_Parfumerie.iss` in Inno Setup Compiler and compile the installer.
+3. Open `ProTech_Touch.iss` in Inno Setup Compiler and compile the installer.
 
 4. If the Inno Setup CLI is installed, you can also run:
 

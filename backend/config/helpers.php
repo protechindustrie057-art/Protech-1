@@ -1,6 +1,6 @@
 <?php
 // =====================================================
-// SK PARFUMERIE — Helpers communs
+// ProTech Touch — Helpers communs
 // =====================================================
 
 require_once __DIR__ . '/database.php';

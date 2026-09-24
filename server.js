@@ -16,7 +16,7 @@ app.prepare()
         process.exit(1);
       }
       console.log('========================================');
-      console.log('   SK Parfumerie est démarré !');
+      console.log('   ProTech Touch est démarré !');
       console.log('========================================');
       console.log(`👉 http://localhost:${port}`);
       console.log('========================================');

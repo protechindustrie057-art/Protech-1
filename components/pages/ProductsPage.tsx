@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import type { Product, Currency } from '@/lib/types'
 import { formatPrice } from '@/lib/store'
@@ -18,12 +19,12 @@ interface Props {
 }
 
 const CATEGORY_MAP: Record<string, string> = {
-  parfums: 'Parfums',
-  laits: 'Laits & Crèmes',
-  rouges: 'Rouges à Lèvres',
-  maquillage: 'Maquillage',
-  soins: 'Soins',
-  cheveux: 'Cheveux',
+  cartouches: 'Cartouches & encres',
+  papier: 'Papier & supports',
+  stockage: 'Stockage & mémoire',
+  cables: 'Câbles & accessoires',
+  accessoires: 'Accessoires',
+  impression: 'Impression & maintenance',
   divers: 'Divers',
 }
 
@@ -32,19 +33,19 @@ const EMPTY_FORM = {
   price: '',
   stock: '10',
   alert_threshold: '5',
-  category: 'parfums',
+  category: 'cartouches',
   barcode: '',
   image: '',
 }
 
 // Fallback image per category
 const CATEGORY_PLACEHOLDERS: Record<string, string> = {
-  parfums: 'https://placehold.co/80x80?text=Parfum',
-  laits: 'https://placehold.co/80x80?text=Lait',
-  rouges: 'https://placehold.co/80x80?text=Rouge',
-  maquillage: 'https://placehold.co/80x80?text=Makeup',
-  soins: 'https://placehold.co/80x80?text=Soin',
-  cheveux: 'https://placehold.co/80x80?text=Cheveux',
+  cartouches: 'https://placehold.co/80x80?text=Cartouche',
+  papier: 'https://placehold.co/80x80?text=Papier',
+  stockage: 'https://placehold.co/80x80?text=Stockage',
+  cables: 'https://placehold.co/80x80?text=Cable',
+  accessoires: 'https://placehold.co/80x80?text=Accessoire',
+  impression: 'https://placehold.co/80x80?text=Impression',
   divers: 'https://placehold.co/80x80?text=Produit',
 }
 
@@ -229,7 +230,10 @@ export default function ProductsPage({
       {/* Actions bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h2 className="text-xl font-bold font-serif text-gray-800 dark:text-white">Gestion des produits</h2>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/" className="rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600">
+            Retour au tableau de bord
+          </Link>
           {/* View toggle */}
           <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-[#2b344d]">
             <button
@@ -420,16 +424,19 @@ export default function ProductsPage({
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white dark:bg-[#0f1117] rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[92vh] overflow-y-auto"
+            className="bg-white/95 dark:bg-[#0f1117]/95 backdrop-blur-xl rounded-[20px] p-3 w-full max-w-[420px] shadow-[0_18px_60px_rgba(15,23,42,0.22)] border border-slate-200/80 dark:border-[#2b344d] max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                {editingId ? 'Modifier le produit' : 'Ajouter un produit'}
-              </h3>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-[#2b344d]">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-sky-600 font-bold">Produit</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                  {editingId ? 'Modifier le produit' : 'Ajouter un produit'}
+                </h3>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1e2436] hover:bg-gray-200 dark:hover:bg-[#2a3448] flex items-center justify-center text-gray-500 dark:text-gray-400"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1e2436] hover:bg-slate-200 dark:hover:bg-[#2a3448] flex items-center justify-center text-slate-500 dark:text-slate-400 transition-all"
                 aria-label="Fermer"
               >
                 ✕
@@ -438,11 +445,11 @@ export default function ProductsPage({
 
             <form onSubmit={handleSubmit} noValidate>
               {/* Photo */}
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Photo du produit</label>
-                <div className="flex items-center gap-4">
+              <div className="mb-4 rounded-2xl border border-slate-200 dark:border-[#2b344d] bg-slate-50 dark:bg-[#121a2b] p-3">
+                <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 mb-2">Photo du produit</label>
+                <div className="flex items-center gap-3">
                   <div
-                    className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-[#2b344d] overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-[#1e2436] cursor-pointer hover:border-yellow-400 transition-colors"
+                    className="w-14 h-14 rounded-2xl border border-slate-200 dark:border-[#2b344d] overflow-hidden flex items-center justify-center bg-white dark:bg-[#1e2436] cursor-pointer hover:border-sky-400 transition-colors shadow-sm"
                     onClick={() => fileInputRef.current?.click()}
                     role="button"
                     tabIndex={0}
@@ -452,22 +459,22 @@ export default function ProductsPage({
                     {form.image ? (
                       <img src={form.image} alt="Aperçu" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-gray-300 dark:text-gray-600 text-3xl select-none">+</span>
+                      <span className="text-slate-300 dark:text-slate-600 text-3xl select-none">+</span>
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-[#2b344d] text-sm text-gray-500 dark:text-gray-400 hover:border-yellow-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                      className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-[#2b344d] text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-sky-400 hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
                     >
-                      Choisir une image (max 2 Mo)
+                      Choisir une image
                     </button>
                     {form.image && (
                       <button
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, image: '' }))}
-                        className="mt-1.5 text-xs text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400"
+                        className="mt-1.5 text-[11px] text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400"
                       >
                         Supprimer l&apos;image
                       </button>
@@ -483,14 +490,14 @@ export default function ProductsPage({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <FieldLabel>Nom du produit *</FieldLabel>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className={INPUT}
-                    placeholder="ex: Dior Sauvage"
+                    placeholder="ex: Cartouche d'encre noir 67A"
                     required
                   />
                 </div>
@@ -570,18 +577,18 @@ export default function ProductsPage({
 
               {formError && <p className="text-red-500 dark:text-red-400 text-xs mt-2">{formError}</p>}
 
-              <div className="flex gap-3 mt-5">
+              <div className="flex gap-2.5 mt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-xl font-bold text-white hover:brightness-110 transition-all"
-                  style={{ background: '#22c55e' }}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-white hover:brightness-110 transition-all shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
                 >
                   Enregistrer
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-all border border-gray-200"
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1d2438] transition-all border border-slate-200 dark:border-[#2b344d]"
                 >
                   Annuler
                 </button>
@@ -594,7 +601,7 @@ export default function ProductsPage({
   )
 }
 
-const INPUT = 'w-full px-3 py-4 rounded-lg border-2 border-gray-200 dark:border-[#2b344d] focus:border-yellow-400 focus:outline-none text-sm bg-white dark:bg-[#1e2436] text-black dark:text-white'
+const INPUT = 'w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 dark:border-[#2b344d] focus:border-yellow-400 focus:outline-none text-sm bg-white dark:bg-[#1e2436] text-black dark:text-white'
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{children}</label>
 }

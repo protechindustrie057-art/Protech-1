@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'SK Parfumerie & Cosmétiques - Gestion Professionnelle',
-  description: 'Système de gestion professionnelle pour SK Parfumerie & Cosmétiques, Kinshasa RDC',
+  title: 'ProTech Touch - Gestion Professionnelle',
+  description: 'Système de gestion professionnelle pour ProTech Touch, Kinshasa RDC',
 }
 
 export default function RootLayout({
